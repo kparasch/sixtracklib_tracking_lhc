@@ -8,17 +8,21 @@ import matplotlib.pyplot as plt
 
 import os
 
-# track_with = 'PySixtrack'
+track_with = 'PySixtrack'
 # track_with = 'Sixtrack'
-track_with = 'Sixtracklib'
+# track_with = 'Sixtracklib'
 #device = 'opencl:1.0'
 device = None
+
+disable_BB = False
 
 n_turns = 100
 
 with open('line_from_mad_with_bbCO.pkl', 'rb') as fid:
     line = pysixtrack.Line.from_dict(pickle.load(fid))
-#line.disable_beambeam()
+
+if disable_BB:
+    line.disable_beambeam()
 
 with open('particle_on_CO_mad_line.pkl', 'rb') as fid:
     partCO = pickle.load(fid)
