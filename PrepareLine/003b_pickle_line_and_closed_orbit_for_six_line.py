@@ -61,14 +61,14 @@ line.beambeam_store_closed_orbit_and_dipolar_kicks(
 # Save machine in pyblep format #
 #################################
 
-with open('line.pkl', 'wb') as fid:
+with open('line_from_six_with_bbCO.pkl', 'wb') as fid:
     pickle.dump(line.to_dict(keepextra=True), fid)
 
 #########################################
 # Save particle on closed orbit as dict #
 #########################################
 
-with open('particle_on_CO.pkl', 'wb') as fid:
+with open('particle_on_CO_six_line.pkl', 'wb') as fid:
     pickle.dump(part_on_CO.to_dict(), fid)
 
 #########################################

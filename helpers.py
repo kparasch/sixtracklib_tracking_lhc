@@ -255,13 +255,6 @@ def track_particle_sixtracklib(
     res = job.output
 
     print(res.particles[0])
-    print(res.particles[0].at_turn.shape)
-    print(res.particles[0].state.reshape(n_turns,n_part))
-    print(n_turns*n_part)
-    
-    state_tbt = res.particles[0].state.reshape(n_turns, n_part)[-1,:]
-    print(state_tbt)
-    prrrrr 
     x_tbt = res.particles[0].x.reshape(n_turns, n_part)
     px_tbt = res.particles[0].px.reshape(n_turns, n_part)
     y_tbt = res.particles[0].y.reshape(n_turns, n_part)
