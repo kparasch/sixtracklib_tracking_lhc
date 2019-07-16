@@ -38,7 +38,7 @@ for iturn in range(10):
     line.track(pstart_st)
     print('%e, %e, %e, %e, %e, %e' % (pstart_st.sigma, pstart.sigma,
                                       pstart_st.delta, pstart.delta, pstart_st.px, pstart.px))
-prrrrr
+
 # Compare closed orbit against sixtrack
 for att in 'x px y py delta sigma'.split():
     att_CO = np.array([getattr(pp, att) for pp in closed_orbit])

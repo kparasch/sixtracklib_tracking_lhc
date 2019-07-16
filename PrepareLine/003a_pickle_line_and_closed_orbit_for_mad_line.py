@@ -5,7 +5,7 @@ import pickle
 ########################################################
 #                  Search closed orbit                 #
 ########################################################
-
+seq = 'lhcb1'
 
 mad = Madx()
 mad.options.echo = False
@@ -13,11 +13,11 @@ mad.options.warn = False
 mad.options.info = False
 
 mad.call('lhcwbb_fortracking.seq')
-mad.use('lhcb1')
+mad.use(seq)
 
-beta0 = mad.sequence['lhcb1'].beam.beta
-gamma0 = mad.sequence['lhcb1'].beam.gamma
-p0c_eV = mad.sequence['lhcb1'].beam.pc*1.e9
+beta0 = mad.sequence[seq].beam.beta
+gamma0 = mad.sequence[seq].beam.gamma
+p0c_eV = mad.sequence[seq].beam.pc*1.e9
 
 twiss_table = mad.twiss()
 x_CO  = twiss_table.x[0]
@@ -27,7 +27,7 @@ py_CO = twiss_table.py[0]
 t_CO  = twiss_table.t[0]
 pt_CO = twiss_table.pt[0]
 
-prr
+
 #convert tau, pt to sigma,delta
 sigma_CO = beta0 * t_CO
 delta_CO = ((pt_CO**2 + 2*pt_CO/beta0) + 1)**0.5 - 1
@@ -71,4 +71,30 @@ with open('line_from_mad_with_bbCO.pkl', 'wb') as fid:
 
 with open('particle_on_CO_mad_line.pkl', 'wb') as fid:
     pickle.dump(part_on_CO.to_dict(), fid)
+
+#########################################
+# Save some optics as dict              #
+#########################################
+
+optics_dict = {'betx'      : twiss_table.betx[0],
+               'bety'      : twiss_table.bety[0],
+               'alfx'      : twiss_table.alfx[0],
+               'alfy'      : twiss_table.alfy[0],
+               'qx'        : mad.table['summ']['q1'][0],
+               'qy'        : mad.table['summ']['q2'][0],
+               'dqx'       : mad.table['summ']['dq1'][0],
+               'dqy'       : mad.table['summ']['dq2'][0],
+               'rf_volt'   : sum(twiss_table.volt),
+               'rf_freq'   : max(twiss_table.freq),
+               'rf_harmon' : max(twiss_table.harmon),
+               'rf_lag'    : twiss_table.lag[twiss_table.harmon != 0][0],
+               'length'    : twiss_table.s[-1],
+               'alfa'      : twiss_table.alfa[0], 
+               'beta0'     : mad.sequence[seq].beam.beta,
+               'gamma0'    : mad.sequence[seq].beam.gamma,
+               'p0c_eV'    : mad.sequence[seq].beam.pc*1.e9
+              }
+
+with open('optics_mad.pkl', 'wb') as fid:
+    pickle.dump(optics_dict , fid)
 
