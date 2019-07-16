@@ -1,2 +1,0 @@
-#!/bin/bash
-(cd temp_trackfun; sixtrack >fort.6)
