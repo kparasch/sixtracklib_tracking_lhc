@@ -14,8 +14,8 @@ import os
 # track_with = 'PySixtrack'
 # track_with = 'Sixtrack'
 track_with = 'Sixtracklib'
-#device = 'opencl:1.0'
-device = None
+device = 'opencl:0.3'
+#device = None
 
 disable_BB = False
 
