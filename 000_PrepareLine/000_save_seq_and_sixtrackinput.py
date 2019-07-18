@@ -2,6 +2,9 @@ import os
 import shutil
 from cpymad.madx import Madx
 
+if not os.path.exists('beambeam_macros/headonslice'):
+    os.system('./init_beambeam_macros.sh')
+
 mask_fname = 'ts_ats30_newMacro_en25_IMO550_C15_X160_I1.2_62.31_60.32.mask'
 
 mad=Madx()
