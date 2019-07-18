@@ -382,7 +382,7 @@ def track_particle_sixtracklib_firstlast(
                    'zeta_tbt_first' : zeta_tbt_first,
                    'delta_tbt_first' : delta_tbt_first,
                    'at_turn_tbt_first' : at_turn_tbt_first,
-                   'state_tbt_first' : state_tbt_first,
+#                   'state_tbt_first' : state_tbt_first,
                    'x_tbt_last' : x_tbt_last,
                    'px_tbt_last' : px_tbt_last,
                    'y_tbt_last' : y_tbt_last,
@@ -390,7 +390,7 @@ def track_particle_sixtracklib_firstlast(
                    'zeta_tbt_last' : zeta_tbt_last,
                    'delta_tbt_last' : delta_tbt_last,
                    'at_turn_tbt_last' : at_turn_tbt_last,
-                   'state_tbt_last' : state_tbt_last,
+#                   'state_tbt_last' : state_tbt_last,
                    'tracking_time_mins' : (end_tracking_time - start_tracking_time)/60.,
                    'collecting_time_mins' : (end_collecting_time - end_tracking_time)/60.,
                   }

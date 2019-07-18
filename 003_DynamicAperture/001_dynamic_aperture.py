@@ -20,8 +20,9 @@ device = 'opencl:0.3'
 #device = None
 
 disable_BB = False
-init_delta_wrt_CO=2.7e-4
+init_delta_wrt_CO=0.
 n_turns = 1000000
+n_turns = 1000
 
 out_fname = 'dynap_sixtracklib_nturns_%d_delta_%.2e.h5'%(n_turns,init_delta_wrt_CO)
 
@@ -55,6 +56,19 @@ if track_with == 'Sixtracklib':
     	info += ' (GPU %s)'%device
 else:
     raise ValueError('What?!')
+
+
+init_N1 = xy_norm.shape[0]
+init_N2 = xy_norm.shape[1]
+
+for key in output_dict.keys():
+    if 'tbt' in key:
+        N0 = output_dict[key].shape[0]
+        N1 = output_dict[key].shape[1]
+        if N1 != init_N1*init_N2:
+            print('mismatching shapes between input and output in %s'%key)
+            break
+        output_dict[key] = output_dict[key].reshape(N0,init_N1,init_N2)
 
 save_dict = {**output_dict, **input_data}
 mfm.dict_to_h5(save_dict, out_fname)
