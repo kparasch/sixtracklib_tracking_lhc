@@ -1,0 +1,3 @@
+[submodule "000_PrepareLine/beambeam_macros"]
+	path = 000_PrepareLine/beambeam_macros
+	url = https://github.com/kparasch/beambeam_macros
