@@ -23,6 +23,7 @@ disable_BB = True
 n_turns = 8000
 fLine = 'line_from_mad_with_bbCO.pkl'
 fParticleCO = 'particle_on_CO_mad_line.pkl'
+fOptics = 'optics_mad.pkl'
 
 
 with open(fLine, 'rb') as fid:
@@ -34,22 +35,25 @@ if disable_BB:
 with open(fParticleCO, 'rb') as fid:
     partCO = pickle.load(fid)
 
-mad = Madx()
-mad.options.echo = False
-mad.options.warn = False
-mad.options.info = False
-mad.call('lhcwbb_fortracking.seq')
-mad.use('lhcb1')
-twi = mad.twiss()
+with open(fOptics, 'rb') as fid:
+    optics = pickle.load(fid)
+
+#mad = Madx()
+#mad.options.echo = False
+#mad.options.warn = False
+#mad.options.info = False
+#mad.call('lhcwbb_fortracking.seq')
+#mad.use('lhcb1')
+#twi = mad.twiss()
 
 
-beta0 = mad.sequence['lhcb1'].beam.beta
-E = mad.sequence['lhcb1'].beam.energy*1.e9 #eV
-alfa = twi.alfa[0]
-V0 = 12.e6 #V
-gamma0 = mad.sequence['lhcb1'].beam.gamma
-q = max(twi.harmon)
-freq = max(twi.freq)*1.e+6
+beta0 = optics['beta0']
+E = optics['p0c_eV']/optics['beta0'] #eV
+alfa = optics['alfa']
+V0 = optics['rf_volt']*1.e6 #V
+gamma0 = optics['gamma0']
+q = optics['rf_harmon']
+freq = optics['rf_freq']*1.e+6
 psi0 = np.pi #above transition
 
 synchrotron_theory_tune = np.sqrt(-V0*q*np.cos(psi0)/2./np.pi/beta0**2/E*(alfa-1./gamma0**2))
