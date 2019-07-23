@@ -2,6 +2,8 @@ import pickle
 import pysixtrack
 import numpy as np
 import NAFFlib
+import sys
+sys.path.append('..')
 import helpers as hp
 import footprint
 import matplotlib.pyplot as plt
