@@ -4,9 +4,13 @@ import numpy as np
 import pysixtrack
 import sixtracktools
 
-fLine = 'line_from_mad_with_bbCO.pkl'
-fParticleCO = 'particle_on_CO_mad_line.pkl'
+use_mad_CO = True
 
+fLine = 'line_from_six_with_bbCO.pkl'
+if use_mad_CO:
+    fParticleCO = 'particle_on_CO_mad_line.pkl'
+else:
+    fParticleCO = 'particle_on_CO_six_line.pkl'
 
 # Load machine
 with open(fLine, 'rb') as fid:
@@ -60,7 +64,6 @@ p_out_st = pysixtrack.Particles(**sixdump[1].get_minimal_beam())
 
 p_in_pyst = p_in_st.copy()
 p_out_pyst = p_in_pyst.copy()
-
 
 
 for att in 'x px y py delta sigma'.split():
