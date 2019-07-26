@@ -323,7 +323,7 @@ def track_particle_sixtracklib_long(
 
     n_turns_tbt=1000
     n_turns_to_store=1000
-    skip_turns=int(nturns)/n_turns_to_store
+    skip_turns=int(n_turns)/n_turns_to_store
  
 
     import sixtracklib
