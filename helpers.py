@@ -133,27 +133,48 @@ def track_particle_sixtrack(
         fid.writelines(lines_f3)
 
     os.system('./runsix_trackfun')
+ 
+    survived_t = []
+    horizontal_amp_mm = []
+    vertical_amp_mm = []
+    ff = open('temp_trackfun/fort.10','r')
+    for line in ff:
+        line = line.strip()
+        line = line.split()
+        #print(len(line))
+        survived_t.append(int(float(line[21])))
+        horizontal_amp_mm.append(float(line[6]))
+        vertical_amp_mm.append(float(line[7]))
 
+        survived_t.append(int(float(line[22])))
+        horizontal_amp_mm.append(float(line[25]))
+        vertical_amp_mm.append(float(line[26]))
+
+    output_dict = {'survived_turns' : np.array(survived_t),
+                   'horizontal_amp_mm' : np.array(horizontal_amp_mm),
+                   'vertical_amp_mm' : np.array(vertical_amp_mm)
+                  }
+    return output_dict
     # Load sixtrack tracking data
-    sixdump_all = sixtracktools.SixDump101('%s/dumtemp.dat' % wfold)
+    #sixdump_all = sixtracktools.SixDump101('%s/dumtemp.dat' % wfold)
 
-    x_tbt = np.zeros((n_turns, n_part))
-    px_tbt = np.zeros((n_turns, n_part))
-    y_tbt = np.zeros((n_turns, n_part))
-    py_tbt = np.zeros((n_turns, n_part))
-    sigma_tbt = np.zeros((n_turns, n_part))
-    delta_tbt = np.zeros((n_turns, n_part))
+    #x_tbt = np.zeros((n_turns, n_part))
+    #px_tbt = np.zeros((n_turns, n_part))
+    #y_tbt = np.zeros((n_turns, n_part))
+    #py_tbt = np.zeros((n_turns, n_part))
+    #sigma_tbt = np.zeros((n_turns, n_part))
+    #delta_tbt = np.zeros((n_turns, n_part))
 
-    for i_part in range(n_part):
-        sixdump_part = sixdump_all[i_part::n_part]
-        x_tbt[:, i_part] = sixdump_part.x
-        px_tbt[:, i_part] = sixdump_part.px
-        y_tbt[:, i_part] = sixdump_part.y
-        py_tbt[:, i_part] = sixdump_part.py
-        sigma_tbt[:, i_part] = sixdump_part.sigma
-        delta_tbt[:, i_part] = sixdump_part.delta
+    #for i_part in range(n_part):
+    #    sixdump_part = sixdump_all[i_part::n_part]
+    #    x_tbt[:, i_part] = sixdump_part.x
+    #    px_tbt[:, i_part] = sixdump_part.px
+    #    y_tbt[:, i_part] = sixdump_part.y
+    #    py_tbt[:, i_part] = sixdump_part.py
+    #    sigma_tbt[:, i_part] = sixdump_part.sigma
+    #    delta_tbt[:, i_part] = sixdump_part.delta
 
-    return x_tbt, px_tbt, y_tbt, py_tbt, sigma_tbt, delta_tbt
+    #return x_tbt, px_tbt, y_tbt, py_tbt, sigma_tbt, delta_tbt
 
 
 def track_particle_pysixtrack(line, part, Dx_wrt_CO_m, Dpx_wrt_CO_rad,
@@ -258,7 +279,7 @@ def track_particle_sixtracklib(
 
     res = job.output
 
-    print(res.particles[0])
+    #print(res.particles[0])
     x_tbt = res.particles[0].x.reshape(n_turns, n_part)
     px_tbt = res.particles[0].px.reshape(n_turns, n_part)
     y_tbt = res.particles[0].y.reshape(n_turns, n_part)
@@ -285,6 +306,145 @@ def track_particle_sixtracklib(
     return x_tbt, px_tbt, y_tbt, py_tbt, sigma_tbt, delta_tbt
 
 
+def track_particle_sixtracklib_long(
+                            line, partCO, Dx_wrt_CO_m, Dpx_wrt_CO_rad,
+                            Dy_wrt_CO_m, Dpy_wrt_CO_rad,
+                            Dsigma_wrt_CO_m, Ddelta_wrt_CO, n_turns,
+                            device=None):
+
+    Dx_wrt_CO_m, Dpx_wrt_CO_rad,\
+        Dy_wrt_CO_m, Dpy_wrt_CO_rad,\
+        Dsigma_wrt_CO_m, Ddelta_wrt_CO = vectorize_all_coords(
+                             Dx_wrt_CO_m, Dpx_wrt_CO_rad,
+                             Dy_wrt_CO_m, Dpy_wrt_CO_rad,
+                             Dsigma_wrt_CO_m, Ddelta_wrt_CO)
+
+    part = pysixtrack.Particles(**partCO)
+
+    n_turns_tbt=1000
+    n_turns_to_store=1000
+    skip_turns=int(n_turns)//n_turns_to_store
+    if skip_turns == 0:
+        skip_turns = 1
+ 
+
+    import sixtracklib
+    elements=sixtracklib.Elements()
+    #sixtracklib.append_beam_monitors_to_lattice(beam_elements_buffer=elements.cbuffer,
+    #                                            until_turn_elem_by_elem=0,
+    #                                            until_turn_turn_by_turn=n_turns_tbt,
+    #                                            until_turn=n_turns,
+    #                                            skip_turns=skip_turns
+    #                                           )
+    elements.BeamMonitor(num_stores=n_turns_tbt,start=0,skip=1,is_rolling=False)
+    elements.BeamMonitor(num_stores=n_turns_to_store,start=0,skip=skip_turns,is_rolling=False)
+    elements.BeamMonitor(num_stores=1,start=0,skip=1,is_rolling=True)
+    print(elements.get_elements())
+    #elements.BeamMonitor(num_stores=n_turns)
+    #elements.BeamMonitor(num_stores=n_turns_to_store)
+    elements.append_line(line)
+
+    n_stores0=elements.get_elements()[0].num_stores
+    n_stores1=elements.get_elements()[1].num_stores
+    n_stores2=elements.get_elements()[2].num_stores
+    n_part = len(Dx_wrt_CO_m)
+
+    # Build PyST particle
+
+    ps = sixtracklib.ParticlesSet()
+    p = ps.Particles(num_particles=n_part)
+
+    for i_part in range(n_part):
+
+        part = pysixtrack.Particles(**partCO)
+        part.x += Dx_wrt_CO_m[i_part]
+        part.px += Dpx_wrt_CO_rad[i_part]
+        part.y += Dy_wrt_CO_m[i_part]
+        part.py += Dpy_wrt_CO_rad[i_part]
+        part.sigma += Dsigma_wrt_CO_m[i_part]
+        part.delta += Ddelta_wrt_CO[i_part]
+
+        part.partid = i_part
+        part.state = 1
+        part.elemid = 0
+        part.turn = 0
+
+        p.from_pysixtrack(part, i_part)
+
+    if device is None:
+        job = sixtracklib.TrackJob(elements, ps)
+    else:
+        job = sixtracklib.TrackJob(elements, ps, device=device)
+
+    start_tracking_time = time.time()
+    job.track(n_turns)
+    end_tracking_time = time.time()
+    job.collect()
+    end_collecting_time = time.time()
+    res = job.output
+
+    print(res.particles[0])
+    print(res.particles[1])
+
+    x_tbt_first       = res.particles[0].x.reshape(n_stores0,n_part)    
+    px_tbt_first      = res.particles[0].px.reshape(n_stores0,n_part)    
+    y_tbt_first       = res.particles[0].y.reshape(n_stores0,n_part)    
+    py_tbt_first      = res.particles[0].py.reshape(n_stores0,n_part)    
+    zeta_tbt_first    = res.particles[0].zeta.reshape(n_stores0,n_part)    
+    delta_tbt_first   = res.particles[0].delta.reshape(n_stores0,n_part)    
+    at_turn_tbt_first = res.particles[0].at_turn.reshape(n_stores0,n_part)    
+    state_tbt_first   = res.particles[0].state.reshape(n_stores0,n_part)    
+
+    x_skip       = res.particles[1].x.reshape(n_stores1,n_part)    
+    px_skip      = res.particles[1].px.reshape(n_stores1,n_part)    
+    y_skip       = res.particles[1].y.reshape(n_stores1,n_part)    
+    py_skip      = res.particles[1].py.reshape(n_stores1,n_part)    
+    zeta_skip    = res.particles[1].zeta.reshape(n_stores1,n_part)    
+    delta_skip   = res.particles[1].delta.reshape(n_stores1,n_part)    
+    at_turn_skip = res.particles[1].at_turn.reshape(n_stores1,n_part)    
+    state_skip   = res.particles[1].state.reshape(n_stores1,n_part)    
+
+    x_last       = res.particles[2].x.reshape(n_stores2,n_part)    
+    px_last      = res.particles[2].px.reshape(n_stores2,n_part)    
+    y_last       = res.particles[2].y.reshape(n_stores2,n_part)    
+    py_last      = res.particles[2].py.reshape(n_stores2,n_part)    
+    zeta_last    = res.particles[2].zeta.reshape(n_stores2,n_part)    
+    delta_last   = res.particles[2].delta.reshape(n_stores2,n_part)    
+    at_turn_last = res.particles[2].at_turn.reshape(n_stores2,n_part)    
+    state_last   = res.particles[2].state.reshape(n_stores2,n_part)    
+
+    output_dict = {'x_tbt_first' : x_tbt_first,
+                   'px_tbt_first' : px_tbt_first,
+                   'y_tbt_first' : y_tbt_first,
+                   'py_tbt_first' : py_tbt_first,
+                   'zeta_tbt_first' : zeta_tbt_first,
+                   'delta_tbt_first' : delta_tbt_first,
+                   'at_turn_tbt_first' : at_turn_tbt_first,
+#                   'state_tbt_first' : state_tbt_first,
+                   'x_skip'      : x_skip,      
+                   'px_skip'     : px_skip,    
+                   'y_skip'      : y_skip,      
+                   'py_skip'     : py_skip,     
+                   'zeta_skip'   : zeta_skip,   
+                   'delta_skip'  : delta_skip,  
+                   'at_turn_skip': at_turn_skip,
+                   'state_skip'  : state_skip,  
+                   'x_last' : x_last,
+                   'px_last' : px_last,
+                   'y_last' : y_last,
+                   'py_last' : py_last,
+                   'zeta_last' : zeta_last,
+                   'delta_last' : delta_last,
+                   'at_turn_last' : at_turn_last,
+#                   'state_tbt_last' : state_tbt_last,
+                   'tracking_time_mins' : (end_tracking_time - start_tracking_time)/60.,
+                   'collecting_time_mins' : (end_collecting_time - end_tracking_time)/60.,
+                  }
+
+
+    print('Done loading!')
+    return output_dict
+
 def track_particle_sixtracklib_firstlast(
                             line, partCO, Dx_wrt_CO_m, Dpx_wrt_CO_rad,
                             Dy_wrt_CO_m, Dpy_wrt_CO_rad,
@@ -302,7 +462,7 @@ def track_particle_sixtracklib_firstlast(
 
     n_turns_to_store=1000
     n_turns_tbt=1000
-    skip_turns=1000
+    #skip_turns=1000
  
 
     import sixtracklib

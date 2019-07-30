@@ -1,0 +1,12 @@
+executable            = Losses_study.sh
+arguments             = $(ProcId) $(ClusterId)
+output                = logs/losses.$(ClusterId).$(ProcId).out
+error                 = logs/losses.$(ClusterId).$(ProcId).err
+log                   = logs/losses.$(ClusterId).$(ProcId).log
+transfer_input_files  = ../../helpers.py, ../../myfilemanager_sixtracklib.py, ../../004_LongTracking
+transfer_output_files = 004_LongTracking/losses_sixtracklib.$(ClusterId).$(ProcId).h5
+transfer_output_remaps= "004_LongTracking/losses_sixtracklib.$(ClusterId).$(ProcId).h5=data/losses_sixtracklib.$(ClusterId).$(ProcId).h5"
+request_GPUs = 1
+request_CPUs = 1
++JobFlavour = "microcentury"
+queue 1
