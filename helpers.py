@@ -86,7 +86,7 @@ def track_particle_sixtrack(
         temp_part.py    += Dpy_wrt_CO_rad[i_part]
         temp_part.sigma += Dsigma_wrt_CO_m[i_part]
         temp_part.delta += Ddelta_wrt_CO[i_part]
- 
+
         lines_f13.append('%.10e\n' % ((temp_part.x) * 1e3))
         lines_f13.append('%.10e\n' % ((temp_part.px) * temp_part.rpp * 1e3))
         lines_f13.append('%.10e\n' % ((temp_part.y) * 1e3))
@@ -98,7 +98,7 @@ def track_particle_sixtrack(
             lines_f13.append('%.10e\n' % (prev_part.Energy * 1e-6))
             lines_f13.append('%.10e\n' % (temp_part.Energy * 1e-6))
         prev_part = temp_part
- 
+
     with open(wfold + '/fort.13', 'w') as fid:
         fid.writelines(lines_f13)
 
