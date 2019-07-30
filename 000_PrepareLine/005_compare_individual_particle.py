@@ -1,6 +1,8 @@
 import pickle
 import pysixtrack
 import numpy as np
+import sys
+sys.path.append('..')
 import helpers as hp
 import matplotlib.pyplot as plt
 
@@ -22,7 +24,7 @@ Dpx_rad = 1e-6
 Dy_m = 2e-4
 Dpy_rad = 3e-6
 Dsigma_m = 2e-3
-Ddelta = 0.
+Ddelta = 2.e-5
 
 part = pysixtrack.Particles(**partCO)
 

@@ -1,4 +1,5 @@
 import sixtracktools
+from cpymad.madx import Madx
 import pysixtrack
 import pickle
 import os
@@ -90,6 +91,7 @@ mad.options.info = False
 
 mad.call('lhcwbb_fortracking.seq')
 mad.use(seq)
+twiss_table = mad.twiss()
 
 optics_dict = {'betx'      : twiss_table.betx[0],
                'bety'      : twiss_table.bety[0],
