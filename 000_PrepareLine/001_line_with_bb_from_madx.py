@@ -33,6 +33,7 @@ mad.twiss()
 mad.survey()
 IP_xyz_b1 = {}
 for ip in ip_names:
+
     IP_xyz_b1[ip] = MadPoint.from_survey('ip%d' % ip+':1', mad)
 
 mad.use('lhcb2')
@@ -40,6 +41,7 @@ mad.twiss()
 mad.survey()
 IP_xyz_b2 = {}
 for ip in ip_names:
+
     IP_xyz_b2[ip] = MadPoint.from_survey('ip%d' % ip+':1', mad)
 
 # Get locations of the bb encounters (absolute from survey), closed orbit
