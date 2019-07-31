@@ -17,15 +17,16 @@ import os
 import time
 
 track_with = 'Sixtracklib'
-#device = 'opencl:0.0'
-device = None
+device = sys.argv[5]
+#device = 'opencl:0.0' 
+#device = None
 
-n_sigmas=5
-n_particles=10
+n_sigmas=4
+n_particles=10000
 
 seed = 0
 if len(sys.argv) > 4:
-    seed = int(sys.argv[4]*4242)
+    seed = int(sys.argv[4])
 
 disable_BB = False
 init_delta=0.
