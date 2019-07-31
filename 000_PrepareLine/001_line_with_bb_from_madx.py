@@ -5,10 +5,10 @@ import pickle
 from cpymad.madx import Madx
 import pysixtrack
 
-from pysixtrack.be_beambeam.tools import norm, find_alpha_and_phi
-from pysixtrack.be_beambeam.tools import get_bb_names_madpoints_sigmas
-from pysixtrack.be_beambeam.tools import shift_strong_beam_based_on_close_ip
-from pysixtrack.be_beambeam.tools import setup_beam_beam_in_line
+from pysixtrack.be_beamfields.tools import norm, find_alpha_and_phi
+from pysixtrack.be_beamfields.tools import get_bb_names_madpoints_sigmas
+from pysixtrack.be_beamfields.tools import shift_strong_beam_based_on_close_ip
+from pysixtrack.be_beamfields.tools import setup_beam_beam_in_line
 from pysixtrack import MadPoint
 
 ip_names = [1, 2, 5, 8]
@@ -33,14 +33,14 @@ mad.twiss()
 mad.survey()
 IP_xyz_b1 = {}
 for ip in ip_names:
-    IP_xyz_b1[ip] = MadPoint('ip%d' % ip+':1', mad, add_CO=False)
+    IP_xyz_b1[ip] = MadPoint.from_survey("ip%d" % ip + ":1", mad) 
 
 mad.use('lhcb2')
 mad.twiss()
 mad.survey()
 IP_xyz_b2 = {}
 for ip in ip_names:
-    IP_xyz_b2[ip] = MadPoint('ip%d' % ip+':1', mad, add_CO=False)
+    IP_xyz_b2[ip] = MadPoint.from_survey("ip%d" % ip + ":1", mad)
 
 # Get locations of the bb encounters (absolute from survey), closed orbit
 # and orientation of the local reference system (MadPoint objects)
