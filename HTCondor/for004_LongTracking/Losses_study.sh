@@ -2,7 +2,7 @@
 
 echo "=========start simulation_parameters.py========="
 tee 004_LongTracking/simulation_parameters.py <<EOF
-device = None
+device = 'opencl:0.0'
 
 output_filename = 'losses_sixtracklib.$2.$1.h5'
 line_filename = 'line_from_mad_with_bbCO.pkl'
