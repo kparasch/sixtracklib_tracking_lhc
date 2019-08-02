@@ -1,0 +1,17 @@
+device = None
+
+output_filename = 'test.h5'
+line_filename = 'line_from_mad_with_bbCO.pkl'
+CO_filename = 'particle_on_CO_mad_line.pkl'
+optics_filename = 'optics_mad.pkl' 
+
+seed = 123
+
+n_turns = 10
+
+n_particles = 1
+n_sigmas = 4
+init_delta_wrt_CO = 2.7e-4
+
+disable_BB = False
+simplify_line = True
