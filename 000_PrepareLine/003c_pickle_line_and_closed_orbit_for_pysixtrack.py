@@ -21,12 +21,6 @@ gamma0 = mad.sequence[seq].beam.gamma
 p0c_eV = mad.sequence[seq].beam.pc*1.e9
 
 twiss_table = mad.twiss()
-x_CO  = twiss_table.x[0]
-px_CO = twiss_table.px[0]
-y_CO  = twiss_table.y[0]
-py_CO = twiss_table.py[0]
-t_CO  = twiss_table.t[0]
-pt_CO = twiss_table.pt[0]
 
 # Load line
 with open('line_from_mad.pkl', 'rb') as fid:
@@ -35,10 +29,17 @@ with open('line_from_mad.pkl', 'rb') as fid:
 # Disable BB elements
 line.disable_beambeam()
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-twiss_table = mad.twiss()
+######################################################
+################### Initialization ###################
+######################################################
 
-##############
+part = pysixtrack.Particles(p0c = p0c_eV)
 
 # get an initial particle to use for finding the closed orbit
 def get_init_particles(part, d):
@@ -100,6 +101,15 @@ def get_R_m(part, line, d):
 
     return R, m, part_CO
 
+
+######################################################
+### Get transfer matrix R and closed orbit part_CO ###
+######################################################
+
+print(' ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~')
+print(' ')
+print('Tracking particle over multiple turns to get the closed orbit...')
+
 #iterate over ii turns to get a stable approximation
 def get_part_CO(part, line, d, ii):
     for i in range(ii):
@@ -108,7 +118,12 @@ def get_part_CO(part, line, d, ii):
         print ("turn %s of %s"%(i,ii))
     return R, part
 
-# Symplectify R using Alex J. Dragt's algorithm
+R, part_CO = get_part_CO(part, line, 1e-10, 10)
+
+######################################################
+##### Symplectify the almost-symplectic matrix R #####
+######################################################
+
 def dragt_symplectify(M): 
     import scipy
     J = np.array([[0., 1., 0., 0., 0., 0.],
@@ -120,38 +135,41 @@ def dragt_symplectify(M):
     N = np.matmul(np.matmul(M , J), np.matmul(M.T, J.T))
     Q = scipy.linalg.expm(0.5 * scipy.linalg.logm(N))
     M_new = np.matmul(np.linalg.inv(Q), M)
-#    print(np.linalg.det(M_new))
     return M_new
 
-# re = np.zeros(6, 6)
-# re[0,:] = [twiss_table.re11[0], twiss_table.re12[0], 
-#            twiss_table.re13[0], twiss_table.re14[0],
-#            twiss_table.re15[0], twiss_table.re16[0]]
-# re[1,:] = [twiss_table.re21[0], twiss_table.re22[0],
-#            twiss_table.re23[0], twiss_table.re24[0],
-#            twiss_table.re25[0], twiss_table.re26[0]]                                                 
-# re[2,:] = [twiss_table.re31[0], twiss_table.re32[0],
-#            twiss_table.re33[0], twiss_table.re34[0], 
-#            twiss_table.re35[0], twiss_table.re36[0]]
-# 
-# re[3,:] = [twiss_table.re41[0], twiss_table.re42[0],
-#            twiss_table.re43[0], twiss_table.re44[0],
-#            twiss_table.re45[0], twiss_table.re46[0]]
-# 
-# re[4,:] = [twiss_table.re51[0], twiss_table.re52[0],
-#            twiss_table.re53[0], twiss_table.re54[0],
-#            twiss_table.re55[0], twiss_table.re56[0]]
-# 
-# re[5,:] = [twiss_table.re61[0], twiss_table.re62[0],
-#            twiss_table.re63[0], twiss_table.re64[0],
-#            twiss_table.re65[0], twiss_table.re66[0]]
+def healy_symplectify(M):
+    J = np.array([[0., 1., 0., 0., 0., 0.],
+                  [-1., 0., 0., 0., 0., 0.],
+                  [ 0., 0., 0., 1., 0., 0.],
+                  [ 0., 0.,-1., 0., 0., 0.],
+                  [ 0., 0., 0., 0., 0., 1.],
+                  [ 0., 0., 0., 0.,-1., 0.]])
 
+    I = np.identity(6)
 
-# Implement Normalization of fully coupled motion
-def get_W(R):
-    M = dragt_symplectify(R)
+    V = np.matmul(J, np.matmul(I - M, np.linalg.inv(I + M)))
+    W = (V + V.T)/2
+    if np.linalg.det(I - np.matmul(J, W)) != 0:
+        M_new = np.matmul(I + np.matmul(J, W), np.linalg.inv(I - np.matmul(J, W)))
+    else:
+        V_else = np.matmul(J, np.matmul(I + M, np.linalg.inv(I - M)))
+        W_else = (V_else + V_else.T)/2
+        M_new = -np.matmul(I + np.matmul(J, W_else), np.linalg(I - np.matmul(J, W_else)))
+    return M_new
+
+print(' ')
+print('Symplectifying R...')
+
+R = dragt_symplectify(R)
+# R = healy_symplectify(R)
+
+######################################################
+### Implement Normalization of fully coupled motion ##
+######################################################
+
+def get_W_sigma(R):
     
-    w0, v0 = np.linalg.eig(M)
+    w0, v0 = np.linalg.eig(R)
     
     a0 = np.real(v0)
     b0 = np.imag(v0)
@@ -161,9 +179,15 @@ def get_W(R):
     
     a = np.array([a0[:,0], a0[:,2], a0[:,4]])   
     b = np.array([b0[:,0], b0[:,2], b0[:,4]])
+    v = v = a + b*1j
     w = np.array([w0[0], w0[2], w0[4]])
     mu = np.imag(np.log(w))
     
+    sigma = np.zeros([6,6])
+
+    for i in range(6):
+        sigma[i,:] = v0[i, :] * np.conj(v0[i, :]).T
+
     R_mu = np.array([[ np.cos(mu[0]), np.sin(mu[0]), 0, 0, 0, 0],
                   [-np.sin(mu[0]), np.cos(mu[0]), 0, 0, 0, 0],
     
@@ -177,38 +201,49 @@ def get_W(R):
                   a[1,:], b[1,:], 
                   a[2,:], b[2,:]]).T
 
-    return W, R_mu
+    return W, R_mu, sigma
 
 
-def normalize(X, turns, nr_part, R):
-    W, idc = get_W(R)
-    X_norm = np.zeros([nr_part, turns, 6])
-    for n in range(turns):
-        for i in range(nr_part):
+def normalize(X, n_turns, n_part, R):
+    print('Getting W...')
+    W = get_W_sigma(R)[0]
+    X_norm = np.zeros([n_part, n_turns, 6])
+    print('Now normalizing X...')
+    for n in range(n_turns):
+        for i in range(n_part):
             X_norm[i, n, :] = np.matmul(np.linalg.inv(W), X[i, n, :])
+        print('%s out of %s turns' %(n, n_turns))
     return X_norm
 
-def track_multi_particles(turns, nr_part, part_CO, R):
-    X = np.zeros([nr_part, turns, 6])
-    for i in range(nr_part):
+print(' ')
+print('Now getting the W matrix for normalization...')
+
+W, R_mu, sigma = get_W_sigma(R)
+
+######################################################
+###### Track n. particles  for n. turns to check #####
+######################################################
+
+
+def track_multi_particles(n_turns, n_part, part_CO, R):
+    X = np.zeros([n_part, n_turns, 6])
+    for i in range(n_part):
         X[i, 0, 0] = part_CO.x + i
     X[:, 0, 1] = part_CO.px
     X[:, 0, 2] = part_CO.y
     X[:, 0, 3] = part_CO.py
     X[:, 0, 4] = part_CO.zeta
     X[:, 0, 5] = part_CO.delta
-    print("Tracking the %s particles for %s turns"%(nr_part, turns))
-    for n in range(turns - 1):
-        for i in range(nr_part):
+    print("Tracking the %s particles for %s turns"%(n_part, n_turns))
+    for n in range(n_turns - 1):
+        for i in range(n_part):
             X[i, n + 1,:] = np.matmul(R, X[i, n,:])
         if n % 100 == 0:
-            print("turn %s of %s" % (n, turns))
+            print("turn %s of %s" % (n, n_turns))
     
     return X
 
-
-
-def return_plot(X, turns, nr_part, R):
+def return_plot(X, n_turns, n_part, R):
     
     import matplotlib.pyplot as plt
     plt.style.use("kostas")
@@ -269,9 +304,42 @@ def return_plot(X, turns, nr_part, R):
     
     return
 
+######################################################
+####### Save some useful tools as dictionary #########
+######################################################
 
 
-################
+tools_dict = {'beta0'     : mad.sequence[seq].beam.beta,
+              'gamma0'    : mad.sequence[seq].beam.gamma,
+              'p0c_eV'    : mad.sequence[seq].beam.pc*1.e9,
+              
+              'part_CO'   : np.array([part_CO.x, 
+                                      part_CO.px, 
+                                      part_CO.y, 
+                                      part_CO.py, 
+                                      part_CO.zeta, 
+                                      part_CO.delta]),
+
+              'R'         : R,
+              'W'         : W
+              }
+
+with open('toolbox_pysixtrack.pkl', 'wb') as fid:
+    pickle.dump(tools_dict , fid)
+
+
+print('~       ~       ~       ~       ~       ~')
+
+print(' ')
+print(tools_dict)
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+'''
 
 #convert tau, pt to sigma,delta
 sigma_CO = beta0 * t_CO
@@ -337,3 +405,4 @@ optics_dict = {'betx'      : twiss_table.betx[0],
 with open('optics_mad.pkl', 'wb') as fid:
     pickle.dump(optics_dict , fid)
 
+'''
