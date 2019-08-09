@@ -61,8 +61,8 @@ def get_init_particles(part, d):
 
     return new_part
 
-# Get the matrix R and vector m after 1 turn
-def get_R_m(part, line, d):
+# Get the matrix M and vector m after 1 turn
+def get_M_m(part, line, d):
     init_part = get_init_particles(part, d)
     fin_part = get_init_particles(part, d)
     line.track(fin_part)
@@ -84,11 +84,11 @@ def get_R_m(part, line, d):
     X_fin[5,:] = fin_part.delta
 
     m = X_fin[:, 0] - X_init[:, 0]
-    R = np.empty([6, 6])
+    M = np.empty([6, 6])
     for j in range(6):
-        R[:,j] = (X_fin[:,j+1] - X_fin[:,0]) / d
+        M[:,j] = (X_fin[:,j+1] - X_fin[:,0]) / d
     
-    X_CO = X_init[:,0] + np.matmul(np.linalg.inv(np.identity(6) - R), m.T)
+    X_CO = X_init[:,0] + np.matmul(np.linalg.inv(np.identity(6) - M), m.T)
     
     part_CO = pysixtrack.Particles(p0c = part.p0c)
     
@@ -99,11 +99,11 @@ def get_R_m(part, line, d):
     part_CO.zeta = X_CO[4]
     part_CO.delta = X_CO[5]
 
-    return R, m, part_CO
+    return M, m, part_CO
 
 
 ######################################################
-### Get transfer matrix R and closed orbit part_CO ###
+### Get transfer matrix M and closed orbit part_CO ###
 ######################################################
 
 print(' ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~')
@@ -113,38 +113,32 @@ print('Tracking particle over multiple turns to get the closed orbit...')
 #iterate over ii turns to get a stable approximation
 def get_part_CO(part, line, d, ii):
     for i in range(ii):
-        R, m, part = get_R_m(part, line, d)
+        M, m, part = get_M_m(part, line, d)
         i += 1
         print ("turn %s of %s"%(i,ii))
-    return R, part
+    return M, part
 
-R, part_CO = get_part_CO(part, line, 1e-10, 10)
+M, part_CO = get_part_CO(part, line, 1e-10, 10)
 
 ######################################################
-##### Symplectify the almost-symplectic matrix R #####
+##### Symplectify the almost-symplectic matrix M #####
 ######################################################
+
+J = np.array([[0., 1., 0., 0., 0., 0.],
+              [-1., 0., 0., 0., 0., 0.],
+              [ 0., 0., 0., 1., 0., 0.],
+              [ 0., 0.,-1., 0., 0., 0.],
+              [ 0., 0., 0., 0., 0., 1.],
+              [ 0., 0., 0., 0.,-1., 0.]])
 
 def dragt_symplectify(M): 
     import scipy
-    J = np.array([[0., 1., 0., 0., 0., 0.],
-                 [-1., 0., 0., 0., 0., 0.],
-                 [ 0., 0., 0., 1., 0., 0.],
-                 [ 0., 0.,-1., 0., 0., 0.],
-                 [ 0., 0., 0., 0., 0., 1.],
-                 [ 0., 0., 0., 0.,-1., 0.]])
     N = np.matmul(np.matmul(M , J), np.matmul(M.T, J.T))
     Q = scipy.linalg.expm(0.5 * scipy.linalg.logm(N))
-    M_new = np.matmul(np.linalg.inv(Q), M)
-    return M_new
+    Ms = np.matmul(np.linalg.inv(Q), M)
+    return Ms
 
 def healy_symplectify(M):
-    J = np.array([[0., 1., 0., 0., 0., 0.],
-                  [-1., 0., 0., 0., 0., 0.],
-                  [ 0., 0., 0., 1., 0., 0.],
-                  [ 0., 0.,-1., 0., 0., 0.],
-                  [ 0., 0., 0., 0., 0., 1.],
-                  [ 0., 0., 0., 0.,-1., 0.]])
-
     I = np.identity(6)
 
     V = np.matmul(J, np.matmul(I - M, np.linalg.inv(I + M)))
@@ -158,18 +152,18 @@ def healy_symplectify(M):
     return M_new
 
 print(' ')
-print('Symplectifying R...')
+print('Symplectifying M...')
 
-R = dragt_symplectify(R)
-# R = healy_symplectify(R)
+Ms = dragt_symplectify(M)
+# Ms = healy_symplectify(M)
 
 ######################################################
 ### Implement Normalization of fully coupled motion ##
 ######################################################
 
-def get_W_sigma(R):
+def get_W_sigma(Ms):
     
-    w0, v0 = np.linalg.eig(R)
+    w0, v0 = np.linalg.eig(Ms)
     
     a0 = np.real(v0)
     b0 = np.imag(v0)
@@ -183,12 +177,13 @@ def get_W_sigma(R):
     w = np.array([w0[0], w0[2], w0[4]])
     mu = np.imag(np.log(w))
     
+    # SIGMA
     sigma = np.zeros([6,6])
-
     for i in range(6):
         sigma[i,:] = v0[i, :] * np.conj(v0[i, :]).T
-
-    R_mu = np.array([[ np.cos(mu[0]), np.sin(mu[0]), 0, 0, 0, 0],
+    
+    # R
+    R = np.array([[ np.cos(mu[0]), np.sin(mu[0]), 0, 0, 0, 0],
                   [-np.sin(mu[0]), np.cos(mu[0]), 0, 0, 0, 0],
     
                   [ 0, 0, np.cos(mu[1]), np.sin(mu[1]), 0, 0],
@@ -197,35 +192,52 @@ def get_W_sigma(R):
                   [ 0, 0, 0, 0, np.cos(mu[2]), np.sin(mu[2])],
                   [ 0, 0, 0, 0,-np.sin(mu[2]), np.cos(mu[2])]])
     
-    W = np.array([a[0,:], b[0,:],
-                  a[1,:], b[1,:], 
-                  a[2,:], b[2,:]]).T
+    # W
+    n = np.zeros([3,]) 
+    aa = np.zeros_like(a)
+    bb = np.zeros_like(b)
+    for i in range(a.shape[0]): 
+        n[i] = np.sqrt(abs(1 / (np.matmul(a[i,:].T, J) @ b[i,:]))) 
+        aa[i] = -n[i] * a[i, :]
+        bb[i] = -n[i] * b[i, :]
+    W = np.array([aa[0,:], bb[0,:],
+                  aa[1,:], bb[1,:], 
+                  aa[2,:], bb[2,:]]).T
 
-    return W, R_mu, sigma
+    return W, R, sigma
 
 
-def normalize(X, n_turns, n_part, R):
+def normalize(X, n_turns, n_part, Ms):
     print('Getting W...')
-    W = get_W_sigma(R)[0]
+    W = get_W_sigma(Ms)[0]
+    inv_W = np.linalg.inv(W)
     X_norm = np.zeros([n_part, n_turns, 6])
     print('Now normalizing X...')
     for n in range(n_turns):
         for i in range(n_part):
-            X_norm[i, n, :] = np.matmul(np.linalg.inv(W), X[i, n, :])
-        print('%s out of %s turns' %(n, n_turns))
+            X_norm[i, n, :] = np.matmul(inv_W, X[i, n, :] - np.array([part_CO.x, 
+                                                                      part_CO.px,
+                                                                      part_CO.y,
+                                                                      part_CO.py,
+                                                                      part_CO.zeta,
+                                                                      part_CO.delta]))
+        if n % 100 == 0:
+            print('%s out of %s turns' %(n, n_turns))
     return X_norm
 
 print(' ')
 print('Now getting the W matrix for normalization...')
 
-W, R_mu, sigma = get_W_sigma(R)
+W, R, sigma = get_W_sigma(Ms)
+inv_W = np.linalg.inv(W)
+
 
 ######################################################
 ###### Track n. particles  for n. turns to check #####
 ######################################################
 
 
-def track_multi_particles(n_turns, n_part, part_CO, R):
+def track_multi_particles(n_turns, n_part, part_CO, Ms):
     X = np.zeros([n_part, n_turns, 6])
     for i in range(n_part):
         X[i, 0, 0] = part_CO.x + i
@@ -237,13 +249,13 @@ def track_multi_particles(n_turns, n_part, part_CO, R):
     print("Tracking the %s particles for %s turns"%(n_part, n_turns))
     for n in range(n_turns - 1):
         for i in range(n_part):
-            X[i, n + 1,:] = np.matmul(R, X[i, n,:])
+            X[i, n + 1,:] = np.matmul(Ms, X[i, n,:])
         if n % 100 == 0:
             print("turn %s of %s" % (n, n_turns))
     
     return X
 
-def return_plot(X, n_turns, n_part, R):
+def return_plot(X, n_turns, n_part, Ms):
     
     import matplotlib.pyplot as plt
     plt.style.use("kostas")
@@ -274,7 +286,7 @@ def return_plot(X, n_turns, n_part, R):
 
     axs[1, 0].set_title(r'$y, p_y$')
 
-    X_norm = normalize(X, 100000, 5, R)
+    X_norm = normalize(X, 100000, 5, Ms)
     
     axs[0, 1].plot(X_norm[0, :, 0], X_norm[0, :, 1], '.b')
     axs[0, 1].plot(X_norm[1, :, 0], X_norm[1, :, 1], '.c')
@@ -308,30 +320,45 @@ def return_plot(X, n_turns, n_part, R):
 ####### Save some useful tools as dictionary #########
 ######################################################
 
-
-tools_dict = {'beta0'     : mad.sequence[seq].beam.beta,
-              'gamma0'    : mad.sequence[seq].beam.gamma,
-              'p0c_eV'    : mad.sequence[seq].beam.pc*1.e9,
-              
-              'part_CO'   : np.array([part_CO.x, 
-                                      part_CO.px, 
-                                      part_CO.y, 
-                                      part_CO.py, 
-                                      part_CO.zeta, 
-                                      part_CO.delta]),
-
-              'R'         : R,
-              'W'         : W
+optics_dict = {'betx'      : twiss_table.betx[0],
+               'bety'      : twiss_table.bety[0],
+               'alfx'      : twiss_table.alfx[0],
+               'alfy'      : twiss_table.alfy[0],
+               'qx'        : mad.table['summ']['q1'][0],
+               'qy'        : mad.table['summ']['q2'][0],
+               'dqx'       : mad.table['summ']['dq1'][0],
+               'dqy'       : mad.table['summ']['dq2'][0],
+               'rf_volt'   : sum(twiss_table.volt),
+               'rf_freq'   : max(twiss_table.freq),
+               'rf_harmon' : max(twiss_table.harmon),
+               'rf_lag'    : twiss_table.lag[twiss_table.harmon != 0][0],
+               'length'    : twiss_table.s[-1],
+               'alfa'      : twiss_table.alfa[0], 
+               'beta0'     : mad.sequence[seq].beam.beta,
+               'gamma0'    : mad.sequence[seq].beam.gamma,
+               'p0c_eV'    : mad.sequence[seq].beam.pc*1.e9,
+               'M'         : M,                             # Transfer matrix M
+               'Ms'        : Ms,                            # Symplectified M
+               'R'         : R,                             # Rotation matrix
+               'W'         : W,
+               'inv_W'     : inv_W,
+               'part_CO'   : np.array([part_CO.x,
+                                       part_CO.px,
+                                       part_CO.y,
+                                       part_CO.py,
+                                       part_CO.zeta,
+                                       part_CO.delta])
               }
 
-with open('toolbox_pysixtrack.pkl', 'wb') as fid:
-    pickle.dump(tools_dict , fid)
-
+with open('optics_mad.pkl', 'wb') as fid:
+    pickle.dump(optics_dict , fid)
 
 print('~       ~       ~       ~       ~       ~')
 
 print(' ')
-print(tools_dict)
+
+print(optics_dict)
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
  # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -378,31 +405,5 @@ with open('line_from_mad_with_bbCO.pkl', 'wb') as fid:
 
 with open('particle_on_CO_mad_line.pkl', 'wb') as fid:
     pickle.dump(part_on_CO.to_dict(), fid)
-
-#########################################
-# Save some optics as dict              #
-#########################################
-
-optics_dict = {'betx'      : twiss_table.betx[0],
-               'bety'      : twiss_table.bety[0],
-               'alfx'      : twiss_table.alfx[0],
-               'alfy'      : twiss_table.alfy[0],
-               'qx'        : mad.table['summ']['q1'][0],
-               'qy'        : mad.table['summ']['q2'][0],
-               'dqx'       : mad.table['summ']['dq1'][0],
-               'dqy'       : mad.table['summ']['dq2'][0],
-               'rf_volt'   : sum(twiss_table.volt),
-               'rf_freq'   : max(twiss_table.freq),
-               'rf_harmon' : max(twiss_table.harmon),
-               'rf_lag'    : twiss_table.lag[twiss_table.harmon != 0][0],
-               'length'    : twiss_table.s[-1],
-               'alfa'      : twiss_table.alfa[0], 
-               'beta0'     : mad.sequence[seq].beam.beta,
-               'gamma0'    : mad.sequence[seq].beam.gamma,
-               'p0c_eV'    : mad.sequence[seq].beam.pc*1.e9
-              }
-
-with open('optics_mad.pkl', 'wb') as fid:
-    pickle.dump(optics_dict , fid)
 
 '''
