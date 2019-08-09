@@ -81,7 +81,6 @@ mad_ft.options.info = False
 mad_ft.call('lhcwbb_fortracking.seq')
 mad_ft.use('lhcb1')  # without this the sequence does not work properly
 
-
 # Build pysixtrack line
 line_for_tracking, _ = pysixtrack.Line.from_madx_sequence(
     mad_ft.sequence['lhcb1'])
