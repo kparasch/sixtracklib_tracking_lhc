@@ -108,7 +108,7 @@ ON_WIRE:=0;
 sigt_col=0.075; ! bunch length [m] in collision
 
 gamma_rel      := NRJ/pmass;
-emittance_norm := 2.50*1.0e-6;
+emittance_norm := 2.00*1.0e-6;
 epsx:=emittance_norm /gamma_rel;
 epsy:=emittance_norm /gamma_rel;
 
@@ -148,9 +148,9 @@ on_x5  = 160;
 on_alice:=7000/nrj; on_lhcb:=7000/nrj;
 qx0 = 62.31;   qy0 = 60.32;  qprime = 15.0;
 !qx0 = 62.31;   qy0 = 60.32;  qprime = 15.0;
-Beam,particle=proton,sequence=lhcb1,energy=6500.0,NPART=1.2e11,
+Beam,particle=proton,sequence=lhcb1,energy=6500.0,NPART=1.25e11,
      sige=1.1e-4,sigt=0.075,ex=epsx,ey=epsy;
-Beam,particle=proton,sequence=lhcb2,energy=6500.0,bv = bvaux,NPART=1.2e11,
+Beam,particle=proton,sequence=lhcb2,energy=6500.0,bv = bvaux,NPART=1.25e11,
      sige=1.1e-4,sigt=0.075,ex=epsx,ey=epsy;
 };
 
