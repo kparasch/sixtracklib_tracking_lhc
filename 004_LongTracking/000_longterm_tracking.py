@@ -21,28 +21,28 @@ track_with = 'Sixtracklib'
 
 with open(pp.optics_filename, 'rb') as fid:
     optics_dict = pickle.load(fid)
-optics_dict['epsn_x'] = 3.5e-6
-optics_dict['epsn_y'] = 3.5e-6
+optics_dict['epsn_x'] = 2.e-6
+optics_dict['epsn_y'] = 2.e-6
+
+epsg_x = optics_dict['epsn_x']/(optics_dict['beta0']*optics_dict['gamma0'])
+epsg_y = optics_dict['epsn_y']/(optics_dict['beta0']*optics_dict['gamma0'])
 
 init_normalized_coordinates_sigma = random_hypersphere.random_hypersphere_reject(pp.n_sigmas, pp.n_particles, dim=4, seed=pp.seed)
-init_normalized_coordinates = np.empty_like(init_normalized_coordinates_sigma)
-init_normalized_coordinates[:,0] = init_normalized_coordinates_sigma[:,0] * np.sqrt( optics_dict['epsn_x']/optics_dict['beta0']/optics_dict['gamma0']/optics_dict['betx'])
-init_normalized_coordinates[:,1] = init_normalized_coordinates_sigma[:,1] * np.sqrt( optics_dict['epsn_x']/optics_dict['beta0']/optics_dict['gamma0']/optics_dict['betx'])
-init_normalized_coordinates[:,2] = init_normalized_coordinates_sigma[:,2] * np.sqrt( optics_dict['epsn_y']/optics_dict['beta0']/optics_dict['gamma0']/optics_dict['bety'])
-init_normalized_coordinates[:,3] = init_normalized_coordinates_sigma[:,3] * np.sqrt( optics_dict['epsn_y']/optics_dict['beta0']/optics_dict['gamma0']/optics_dict['bety'])
-init_x, init_px, init_y, init_py = normalization.denormalize_4d_uncoupled(init_normalized_coordinates, optics_dict)
 
+normalized_delta = pp.init_delta_wrt_CO*optics_dict['invW'][5,5] 
+
+init_normalized_6D = np.empty([pp.n_particles, 6])
+init_normalized_6D[:,0] = init_normalized_coordinates_sigma[:,0] * np.sqrt(epsg_x)
+init_normalized_6D[:,1] = init_normalized_coordinates_sigma[:,1] * np.sqrt(epsg_x)
+init_normalized_6D[:,2] = init_normalized_coordinates_sigma[:,2] * np.sqrt(epsg_y)
+init_normalized_6D[:,3] = init_normalized_coordinates_sigma[:,3] * np.sqrt(epsg_y)
+init_normalized_6D[:,4] = 0.
+init_normalized_6D[:,5] = normalized_delta
+
+init_denormalized_coordinates = np.tensordot(optics_dict['W'], init_normalized_6D, [1,1]).T
 
 with open(pp.CO_filename, 'rb') as fid:
     partCO = pickle.load(fid)
-
-init_delta = pp.init_delta_wrt_CO + partCO['delta']
-
-#remove dispersion
-init_x += optics_dict['disp_x']*init_delta
-init_px += optics_dict['disp_px']*init_delta
-init_y += optics_dict['disp_y']*init_delta
-init_py += optics_dict['disp_py']*init_delta
 
 out_fname = pp.output_filename
 
@@ -59,9 +59,13 @@ if pp.disable_BB:
 
 if track_with == 'Sixtracklib':
     output_dict = hp.track_particle_sixtracklib_long(
-        line=line, partCO=partCO, Dx_wrt_CO_m=init_x, Dpx_wrt_CO_rad=init_px,
-        Dy_wrt_CO_m=init_y, Dpy_wrt_CO_rad=init_py,
-        Dsigma_wrt_CO_m=0., Ddelta_wrt_CO=pp.init_delta_wrt_CO, n_turns=pp.n_turns, device=pp.device)
+            line=line, partCO=partCO, Dx_wrt_CO_m = init_denormalized_coordinates[:,0],
+                                   Dpx_wrt_CO_rad = init_denormalized_coordinates[:,1],
+                                      Dy_wrt_CO_m = init_denormalized_coordinates[:,2],
+                                   Dpy_wrt_CO_rad = init_denormalized_coordinates[:,3],
+                                   Dzeta_wrt_CO_m = init_denormalized_coordinates[:,4],
+                                    Ddelta_wrt_CO = init_denormalized_coordinates[:,5],
+                                n_turns=pp.n_turns, device=pp.device)
     info = track_with
     if pp.device is None:
     	info += ' (CPU)'
@@ -70,10 +74,12 @@ if track_with == 'Sixtracklib':
 else:
     raise ValueError('What?!')
 
-input_data = {'init_x' : init_x,
-              'init_px' : init_px,
-              'init_y' : init_y,
-              'init_py' : init_py,
+input_data = {'init_x' :    init_denormalized_coordinates[:,0],
+              'init_px' :   init_denormalized_coordinates[:,1],
+              'init_y' :    init_denormalized_coordinates[:,2],
+              'init_py' :   init_denormalized_coordinates[:,3],
+              'init_zeta' : init_denormalized_coordinates[:,4],
+              'init_delta' :init_denormalized_coordinates[:,5],
               'init_delta_wrt_CO' : pp.init_delta_wrt_CO
              }
 

@@ -434,15 +434,15 @@ def track_particle_sixtracklib(
 def track_particle_sixtracklib_long(
                             line, partCO, Dx_wrt_CO_m, Dpx_wrt_CO_rad,
                             Dy_wrt_CO_m, Dpy_wrt_CO_rad,
-                            Dsigma_wrt_CO_m, Ddelta_wrt_CO, n_turns,
+                            Dzeta_wrt_CO_m, Ddelta_wrt_CO, n_turns,
                             device=None):
 
     Dx_wrt_CO_m, Dpx_wrt_CO_rad,\
         Dy_wrt_CO_m, Dpy_wrt_CO_rad,\
-        Dsigma_wrt_CO_m, Ddelta_wrt_CO = vectorize_all_coords(
+        Dzeta_wrt_CO_m, Ddelta_wrt_CO = vectorize_all_coords(
                              Dx_wrt_CO_m, Dpx_wrt_CO_rad,
                              Dy_wrt_CO_m, Dpy_wrt_CO_rad,
-                             Dsigma_wrt_CO_m, Ddelta_wrt_CO)
+                             Dzeta_wrt_CO_m, Ddelta_wrt_CO)
 
     part = pysixtrack.Particles(**partCO)
 
@@ -486,7 +486,7 @@ def track_particle_sixtracklib_long(
         part.px += Dpx_wrt_CO_rad[i_part]
         part.y += Dy_wrt_CO_m[i_part]
         part.py += Dpy_wrt_CO_rad[i_part]
-        part.sigma += Dsigma_wrt_CO_m[i_part]
+        part.zeta += Dzeta_wrt_CO_m[i_part]
         part.delta += Ddelta_wrt_CO[i_part]
 
         part.partid = i_part
