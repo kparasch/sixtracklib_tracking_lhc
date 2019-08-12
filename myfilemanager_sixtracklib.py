@@ -12,11 +12,11 @@ def h5_to_dict(filename, group=None):
         grp = fid
     else:
         grp = fid[group]
-    mydict={} 
-    for key in grp.keys(): 
-        mydict[key] = grp[key][()] 
+    mydict={}
+    for key in grp.keys():
+        mydict[key] = grp[key][()]
     return mydict
-         
+
 
 def dict_to_h5(dict_save, filename, compression_opts=4, group=None, readwrite_opts='w'):
     with h5py.File(filename, readwrite_opts) as fid:
@@ -33,4 +33,3 @@ def dict_to_h5(dict_save, filename, compression_opts=4, group=None, readwrite_op
                 dset[...] = dict_save[kk]
             else:
                 grp[kk] = dict_save[kk]
-
