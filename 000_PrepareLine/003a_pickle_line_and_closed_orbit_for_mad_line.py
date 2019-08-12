@@ -65,6 +65,17 @@ line.beambeam_store_closed_orbit_and_dipolar_kicks(
 with open('line_from_mad_with_bbCO.pkl', 'wb') as fid:
     pickle.dump(line.to_dict(keepextra=True), fid)
   
+##########################################
+# Compute linear map around closed orbit #
+##########################################
+
+part = pysixtrack.Particles(p0c = p0c_eV)
+pysixtrack_CO_bb, M = normalization.get_CO_and_linear_map(part, line, 1e-10, 1.e-10)
+
+Ms = normalization.healy_symplectify(M)
+
+W, invW, R = normalization.linear_normal_form(Ms)
+
 #########################################
 # Save particle on closed orbit as dict #
 #########################################
@@ -92,7 +103,12 @@ optics_dict = {'betx'      : twiss_table.betx[0],
                'alfa'      : twiss_table.alfa[0], 
                'beta0'     : mad.sequence[seq].beam.beta,
                'gamma0'    : mad.sequence[seq].beam.gamma,
-               'p0c_eV'    : mad.sequence[seq].beam.pc*1.e9
+               'p0c_eV'    : mad.sequence[seq].beam.pc*1.e9,
+               'M'         : M,
+               'Ms'        : Ms,
+               'W'         : W,
+               'invW'      : invW,
+               'R'         : R
               }
 
 with open('optics_mad.pkl', 'wb') as fid:
