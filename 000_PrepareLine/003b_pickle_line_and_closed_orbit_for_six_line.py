@@ -2,6 +2,11 @@ import sixtracktools
 from cpymad.madx import Madx
 import pysixtrack
 import pickle
+import sys
+sys.path.append('..')
+
+import normalization
+
 import os
 
 os.system('(cd sixtrack; ./runsix)')
