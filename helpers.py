@@ -508,8 +508,8 @@ def track_particle_sixtracklib_long(
     end_collecting_time = time.time()
     res = job.output
 
-    print(res.particles[0])
-    print(res.particles[1])
+    #print(res.particles[0])
+    #print(res.particles[1])
 
     x_tbt_first       = res.particles[0].x.reshape(n_stores0,n_part)    
     px_tbt_first      = res.particles[0].px.reshape(n_stores0,n_part)    
