@@ -80,7 +80,7 @@ mad_ft.call('lhcwbb_fortracking.seq')
 mad_ft.use('lhcb1')  # without this the sequence does not work properly
 
 # Build pysixtrack line
-line_for_tracking, _ = pysixtrack.Line.from_madx_sequence(
+line_for_tracking = pysixtrack.Line.from_madx_sequence(
     mad_ft.sequence['lhcb1'])
 
 # Setup 4D and 6D beam beam lenses
@@ -97,7 +97,7 @@ assert(np.abs(line_for_tracking.get_length()
 # There is a problem in the mask
 # (the RF frequancy is wrong in the machine for tracking
 # I patch it here -> to be fixed properly!!!!
-line_temp, _ = pysixtrack.Line.from_madx_sequence(mad.sequence.lhcb1)
+line_temp = pysixtrack.Line.from_madx_sequence(mad.sequence.lhcb1)
 dct_correct_cavities = dict(zip(*line_temp.get_elements_of_type(
     pysixtrack.elements.Cavity)[::-1]))
 for ii, nn in enumerate(line_for_tracking.element_names):

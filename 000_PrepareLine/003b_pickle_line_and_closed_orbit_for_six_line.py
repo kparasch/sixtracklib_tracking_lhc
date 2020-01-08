@@ -22,7 +22,8 @@ sixinput = sixtracktools.SixInput('./sixtrack')
 p0c_eV = sixinput.initialconditions[-3]*1e6
 
 # Build pysixtrack line from sixtrack input
-line, other_data = pysixtrack.Line.from_sixinput(sixinput)
+line = pysixtrack.Line.from_sixinput(sixinput)
+other_data = line.other_info
 
 
 # Info on sixtrack->pyblep conversion 

@@ -9,7 +9,7 @@ with open('line_from_mad.pkl', 'rb') as fid:
     lmad = pysixtrack.Line.from_dict(pickle.load(fid))
 
 sixinput = sixtracktools.sixinput.SixInput('sixtrack/')
-lsix, other = pysixtrack.Line.from_sixinput(sixinput)
+lsix = pysixtrack.Line.from_sixinput(sixinput)
 
 original_length = lmad.get_length()
 assert((lsix.get_length() - original_length) < 1e-6)
