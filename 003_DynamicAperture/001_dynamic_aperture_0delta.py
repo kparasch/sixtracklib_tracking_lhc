@@ -27,7 +27,7 @@ with open(fOptics, 'rb') as fid:
     optics_dict['epsn_x'] = 2.e-6
     optics_dict['epsn_y'] = 2.e-6
 
-init_delta = 2.7e-4
+init_delta = 0.
 r_max_sigma = 10.
 r_min_sigma = 0.05
 r_step = 0.05
